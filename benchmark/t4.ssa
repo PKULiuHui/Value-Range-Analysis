@@ -1,0 +1,32 @@
+
+;; Function foo (foo, funcdef_no=0, decl_uid=1831, cgraph_uid=0, symbol_order=0)
+
+foo (int argc)
+{
+  int k;
+  int D.1838;
+  int _5;
+
+  <bb 2>:
+  k_2 = 0;
+  goto <bb 4>;
+
+  <bb 3>:
+  k_4 = k_1 + 1;
+
+  <bb 4>:
+  # k_1 = PHI <k_2(2), k_4(3)>
+  if (k_1 < argc_3(D))
+    goto <bb 3>;
+  else
+    goto <bb 5>;
+
+  <bb 5>:
+  _5 = k_1;
+
+<L3>:
+  return _5;
+
+}
+
+

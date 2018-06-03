@@ -1,0 +1,64 @@
+
+;; Function foo (foo, funcdef_no=0, decl_uid=1830, cgraph_uid=0, symbol_order=0)
+
+foo ()
+{
+  int j;
+  int i;
+  int sum;
+  int D.1845;
+  int D.1844;
+  int _9;
+  int _13;
+
+  <bb 2>:
+  sum_6 = -10;
+  i_7 = 0;
+  goto <bb 9>;
+
+  <bb 3>:
+  j_8 = 0;
+  goto <bb 7>;
+
+  <bb 4>:
+  if (j_5 == 99)
+    goto <bb 5>;
+  else
+    goto <bb 6>;
+
+  <bb 5>:
+  _9 = j_5 * j_5;
+  sum_10 = _9 + sum_2;
+
+  <bb 6>:
+  # sum_1 = PHI <sum_2(4), sum_10(5)>
+  j_11 = j_5 + 1;
+
+  <bb 7>:
+  # sum_2 = PHI <sum_3(3), sum_1(6)>
+  # j_5 = PHI <j_8(3), j_11(6)>
+  if (j_5 <= i_4)
+    goto <bb 4>;
+  else
+    goto <bb 8>;
+
+  <bb 8>:
+  i_12 = i_4 + 1;
+
+  <bb 9>:
+  # sum_3 = PHI <sum_6(2), sum_2(8)>
+  # i_4 = PHI <i_7(2), i_12(8)>
+  if (i_4 <= 99)
+    goto <bb 3>;
+  else
+    goto <bb 10>;
+
+  <bb 10>:
+  _13 = sum_3;
+
+<L8>:
+  return _13;
+
+}
+
+

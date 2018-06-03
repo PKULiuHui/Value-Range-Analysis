@@ -1,0 +1,55 @@
+
+;; Function foo (foo, funcdef_no=0, decl_uid=1832, cgraph_uid=0, symbol_order=0)
+
+foo (int a, int b)
+{
+  float ret;
+  float k;
+  float j;
+  float i;
+  float D.1845;
+  float _15;
+
+  <bb 2>:
+  if (a_4(D) != 0)
+    goto <bb 3>;
+  else
+    goto <bb 4>;
+
+  <bb 3>:
+  i_5 = 1.030000019073486328125e+1;
+  j_6 = 5.19999980926513671875e+0;
+  k_7 = i_5 / j_6;
+  goto <bb 5>;
+
+  <bb 4>:
+  i_8 = 7.30000019073486328125e+0;
+  j_9 = 2.400000095367431640625e+0;
+  k_10 = i_8 - j_9;
+
+  <bb 5>:
+  # j_1 = PHI <j_6(3), j_9(4)>
+  # k_2 = PHI <k_7(3), k_10(4)>
+  ret_11 = 0.0;
+  if (b_12(D) != 0)
+    goto <bb 6>;
+  else
+    goto <bb 7>;
+
+  <bb 6>:
+  ret_13 = k_2 - j_1;
+  goto <bb 8>;
+
+  <bb 7>:
+  ret_14 = k_2 * 3.0e+0;
+
+  <bb 8>:
+  # ret_3 = PHI <ret_13(6), ret_14(7)>
+  _15 = ret_3;
+
+<L6>:
+  return _15;
+
+}
+
+

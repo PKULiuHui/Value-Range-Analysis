@@ -1,0 +1,41 @@
+
+;; Function foo (foo, funcdef_no=0, decl_uid=1830, cgraph_uid=0, symbol_order=0)
+
+foo ()
+{
+  float j;
+  float ret;
+  int k;
+  int D.1840;
+  int D.1839;
+  int _5;
+  int _9;
+
+  <bb 2>:
+  k_3 = 0;
+  ret_4 = 0.0;
+  goto <bb 4>;
+
+  <bb 3>:
+  _5 = k_1 * 2;
+  j_6 = (float) _5;
+  ret_7 = j_6 + 1.0e+1;
+  k_8 = k_1 + 1;
+
+  <bb 4>:
+  # k_1 = PHI <k_3(2), k_8(3)>
+  # ret_2 = PHI <ret_4(2), ret_7(3)>
+  if (k_1 <= 100)
+    goto <bb 3>;
+  else
+    goto <bb 5>;
+
+  <bb 5>:
+  _9 = (int) ret_2;
+
+<L3>:
+  return _9;
+
+}
+
+

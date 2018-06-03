@@ -1,0 +1,57 @@
+
+;; Function bar (bar, funcdef_no=0, decl_uid=1832, cgraph_uid=0, symbol_order=0)
+
+bar (int i, int j)
+{
+  <bb 2>:
+  goto <bb 4>;
+
+  <bb 3>:
+  i_5 = i_1 + 1;
+  j_6 = j_2 + -1;
+
+  <bb 4>:
+  # i_1 = PHI <i_3(D)(2), i_5(3)>
+  # j_2 = PHI <j_4(D)(2), j_6(3)>
+  if (i_1 < j_2)
+    goto <bb 3>;
+  else
+    goto <bb 5>;
+
+  <bb 5>:
+  return;
+
+}
+
+
+
+;; Function foo (foo, funcdef_no=1, decl_uid=1839, cgraph_uid=1, symbol_order=1)
+
+foo (int k, int N)
+{
+  int D.1845;
+  int _8;
+
+  <bb 2>:
+  goto <bb 4>;
+
+  <bb 3>:
+  bar (0, k_1);
+  k_7 = k_1 + 1;
+
+  <bb 4>:
+  # k_1 = PHI <k_3(D)(2), k_7(3)>
+  if (k_1 < N_5(D))
+    goto <bb 3>;
+  else
+    goto <bb 5>;
+
+  <bb 5>:
+  _8 = k_1;
+
+<L3>:
+  return _8;
+
+}
+
+
