@@ -6,16 +6,16 @@ import re
 
 parser = argparse.ArgumentParser(description='Convert SSA to eSSA')
 parser.add_argument('-data_dir', type=str, default='../benchmark/')
-parser.add_argument('-phase', type=str, default='t3')
+parser.add_argument('-phase', type=str, default='t1')
 args = parser.parse_args()
 
 
-class Block:
+class Block:  # 基本块
 
     def __init__(self, blk):
         self.id = 0  # 块号，<bb k>的块号为k，<Lk>的块号为-k
         self.statements = []
-        self.next = []  # 记录后继块号，共3种情况：无goto语句(下一块号)，1个goto语句(goto 块号)，2个goto语句(True块号和False块号)
+        self.next = []  # 后继块号，共3种情况：无goto语句(下一块号)，1个goto语句(goto 块号)，2个goto语句(True块号和False块号)
         self.cond = []  # 如果存在条件分支，记录判断条件
         stats = blk.split('\n')
         self.id = int(re.search(r'\d+', stats[0]).group(0))
@@ -43,17 +43,17 @@ class Block:
         return rst
 
 
-class Function:
+class Function:  # 函数
 
     def __init__(self, name, paras, body):
-        self.name = name  # 函数名
-        self.paras = {}  # 参数列表
-        self.vars = {}  # 存储变量名以及对应的变量类型
-        self.blks = []  # 存储基本块
-        for para in paras.strip().split(', '):
+        self.name = name
+        self.paras = []  # 参数
+        self.vars = {}  # 变量及对应类型
+        self.blks = []  # 该函数的所有基本块
+        for para in paras.strip().split(','):
             para = para.strip().split()
             if len(para) == 2:
-                self.paras[para[1]] = para[0]
+                self.paras.append(para[1])
         for blk in body.split('\n\n'):
             if '>:' in blk:  # 基本块，包括<bb k>和<Lk>
                 self.blks.append(Block(blk.strip()))
@@ -62,11 +62,11 @@ class Function:
                     stat = stat.strip().split()
                     if len(stat) == 2:
                         self.vars[stat[1]] = stat[0]
-        for i in range(0, len(self.blks)):
-            if len(self.blks[i].next) == 0:  # 块中无goto语句，后继就是下一块
+        for i in range(0, len(self.blks)):  # 设置无goto语句的基本块的后继
+            if len(self.blks[i].next) == 0:
                 if i < len(self.blks) - 1:
                     self.blks[i].next.append(self.blks[i + 1].id)
-        self.to_essa()
+        self.to_essa()  # 将ssa表示转成essa
 
     def __str__(self):
         rst = 'Func name: %s\n' % self.name
@@ -91,14 +91,16 @@ class Function:
                 self.blks[i] = blk
                 return
 
-    # 检查变量在当前路径上是否有被Use，如果没有就不需要添加true/false变量
+    # 检查变量在当前路径上是否有被Use，如果没有就不需要添加var_t/var_f变量
     def check_used_var(self, checked, cur_id, var):
         cur_blk = self.find_blk(cur_id)
         # 检查当前块的语句中是否使用了该变量
         for stat in cur_blk.statements:
-            if stat.rfind(var) > stat.find('=') and 'ft' not in stat:  # 如果不是赋值语句，只要出现就算Use，否则需要出现在'='之后才算Use
+            # 如果不是赋值语句，只要出现就算Use，否则需要出现在' = '之后才算Use
+            if stat.rfind(var) > stat.find(' = ') and 'ft' not in stat:
                 return True
-            if stat.find(var) < stat.find('=') and stat.find(var) != -1:  # 如果出现在'='之前，变量被重新定义
+            # 如果出现在' = '之前，变量被重新定义，当前路径没有Use
+            if stat.find(var) < stat.find(' = ') and stat.find(var) != -1:
                 return False
 
         checked.append(cur_id)
@@ -110,14 +112,31 @@ class Function:
                     return True
         return False
 
-    # 将当前路径上所有旧变量的Use替换成新变量的Use，在第一个块中初始化新变量
+    # 将当前路径上所有旧变量的Use替换成新变量的Use，并在路径第一个块中初始化新变量
     def insert_var(self, checked, cur_id, var_old, var_new, var_init):
         blk = self.find_blk(cur_id)
         cont = True  # continue flag
+        if var_old + '_t' == var_new:
+            another = var_old + '_f'
+        else:
+            another = var_old + '_t'
         for i in range(0, len(blk.statements)):
-            if blk.statements[i].find(var_old) > blk.statements[i].find('=') and 'ft' not in blk.statements[i]:
-                blk.statements[i] = blk.statements[i].replace(var_old, var_new)
-            if blk.statements[i].find(var_old) < blk.statements[i].find('=') and blk.statements[i].find(var_old) != -1:
+            if blk.statements[i].find(var_old) > blk.statements[i].find(' = ') and 'ft' not in blk.statements[i]:
+                if another in blk.statements[i]:  # 当前变量既可以来自var_t，也可以来自var_f，所以变回var
+                    blk.statements[i] = blk.statements[i].replace(another, var_old)
+                    if 'if' in blk.statements[i]:
+                        for j in range(0, len(blk.cond)):
+                            if blk.cond[j] == another:
+                                blk.cond[j] = var_old
+                else:  # 将var变成var_t或var_f（绝大多数情况）
+                    blk.statements[i] = blk.statements[i].replace(var_old, var_new)
+                    if 'if' in blk.statements[i]:
+                        for j in range(0, len(blk.cond)):
+                            if blk.cond[j] == var_old:
+                                blk.cond[j] = var_new
+
+            if blk.statements[i].find(var_old) < blk.statements[i].find(' = ') and blk.statements[i].find(
+                    var_old) != -1:
                 # 注意此时var出现在赋值语句左边
                 # blk.statements[i].replace(var_new, var_old, 1)
                 cont = False
@@ -203,13 +222,21 @@ class Function:
 
     def to_essa(self):
         # 依次处理存在条件判断的块
-        for blk in self.blks:
+        queue = [self.blks[0]]
+        reached = []
+        while len(queue) != 0:
+            blk = queue[0]
+            queue = queue[1:]
+            reached.append(blk.id)
+            for next_blk_id in blk.next:
+                if next_blk_id not in reached:
+                    queue.append(self.find_blk(next_blk_id))
             if len(blk.cond) != 3:
                 continue
             related_vars = []  # 条件判断有两种类型: var rel var | var rel const
-            related_const = []
+            related_const = []  # 记录条件中的变量和常量
             for i in [0, 2]:
-                match = re.search(r'[a-zA-Z_]+', blk.cond[i])
+                match = re.search(r'[a-zA-Z_]+', blk.cond[i])  # 只有带字母或下划线的才是变量，否则是常量
                 if match:
                     related_vars.append(blk.cond[i])
                 else:
@@ -236,6 +263,7 @@ class Function:
                     self.insert_var([], blk.next[1], related_vars[0], related_vars[0] + '_f', var_false)
 
 
+# 将字符串转换成数值
 def my_eval(num):
     if num == '-inf':
         return -1e20
@@ -252,7 +280,7 @@ class eSSA:
         self.output = []
         self.funcs = []
 
-        # 读取.c文件中的输入输出
+        # 解析.c文件中，读取输入输出范围
         with open(os.path.join(data_dir, phase + '.c'), 'r') as f:
             state = 0
             for line in f.readlines():
