@@ -7,7 +7,7 @@ import copy
 
 parser = argparse.ArgumentParser(description='Build Constraint Graph')
 parser.add_argument('-data_dir', type=str, default='../benchmark/')
-parser.add_argument('-phase', type=str, default='t1')
+parser.add_argument('-phase', type=str, default='t4')
 args = parser.parse_args()
 
 
@@ -47,7 +47,7 @@ def merge(essa, funcs):
             foo_idx = i
             break
     assert foo_idx != -1
-    reserved_symbol = [tmp.name for tmp in essa.funcs] + ['inf', 'PHI', 'ft']
+    reserved_symbol = [tmp.name for tmp in essa.funcs] + ['inf', 'PHI', 'ft', 'e', 'int', 'float']
     call_cnt = 0  # 函数调用计数
     queue = funcs[foo_idx][:]  # 最终constraints，初始化为foo函数的constraints
     cursor = 0
@@ -101,7 +101,7 @@ class Graph:
         self.SCC = []  # 存储强连通分量
         self.ranges=[]
 
-        reserved_symbol = [tmp.name for tmp in essa.funcs] + ['inf', 'PHI', 'ft']
+        reserved_symbol = [tmp.name for tmp in essa.funcs] + ['inf', 'PHI', 'ft', 'e', 'int', 'float']
         for stat in constraints:
             vars = re.finditer(r'[a-zA-Z_]\w*', stat)
             for var in vars:
