@@ -3,6 +3,7 @@
 import argparse
 import re
 from ssa2essa import eSSA
+import copy
 
 parser = argparse.ArgumentParser(description='Build Constraint Graph')
 parser.add_argument('-data_dir', type=str, default='../benchmark/')
@@ -94,8 +95,12 @@ class Graph:
     def __init__(self, essa, constraints):
         self.vertex = []
         self.v2id = {}
+        self.vars=[]
+        self.cons=[]
         self.matrix = []
         self.SCC = []  # 存储强连通分量
+        self.ranges=[]
+
         reserved_symbol = [tmp.name for tmp in essa.funcs] + ['inf', 'PHI', 'ft']
         for stat in constraints:
             vars = re.finditer(r'[a-zA-Z_]\w*', stat)
@@ -107,6 +112,8 @@ class Graph:
             self.vertex.append(stat)
         for i, v in enumerate(self.vertex):
             self.v2id[v] = i
+        self.determineVar()
+        self.initRange()
         for i in range(0, len(self.vertex)):
             self.matrix.append([0] * len(self.vertex))
         for stat in constraints:
@@ -124,6 +131,18 @@ class Graph:
                             self.matrix[self.v2id[var]][self.v2id[stat]] = 1
         self.compute_scc()
         self.topo_sorting()
+
+
+    def determineVar(self):
+        for node in self.vertex:
+            if '=' in node:
+                self.cons.append(self.v2id[node])
+            else:
+                self.vars.append(self.v2id[node])
+
+    def initRange(self):
+        for i in range(len(self.vertex)):
+            self.ranges.append(['s','s'])
 
     def compute_scc(self):
         r_matrix = [[0] * len(self.vertex) for i in range(0, len(self.vertex))]
@@ -158,10 +177,10 @@ class Graph:
         record.append(vid)
         for j in range(0, len(self.vertex)):
             if matrix[vid][j] != 0 and j not in reached:
-                self.r_dfs(reached, record, matrix, j)
+                self.dfs(reached, record, matrix, j)
 
     def topo_sorting(self):
-        matrix = self.matrix[:]
+        matrix = copy.deepcopy(self.matrix)
         sorted_scc = []
         while len(sorted_scc) < len(self.SCC):
             cur_scc = None
