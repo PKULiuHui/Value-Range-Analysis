@@ -154,8 +154,8 @@ class Function:  # 函数
     # 处理 var1 rel var2 型比较语句
     @staticmethod
     def eval_cond_var(x, y, rel):
-        x_true = x_false = x + ' ∩ '
-        y_true = y_false = y + ' ∩ '
+        x_true = x_false = x + ' ^ '
+        y_true = y_false = y + ' ^ '
         if rel == '>':
             x_true += '[ft(%s)+1, +inf]' % y
             x_false += '[-inf, ft(%s)]' % y
@@ -194,7 +194,7 @@ class Function:  # 函数
     # 处理 var rel const 型比较语句
     @staticmethod
     def eval_cond_const(x, c, rel):
-        x_true = x_false = x + ' ∩ '
+        x_true = x_false = x + ' ^ '
         if rel == '>':
             x_true += '[%s, +inf]' % str(c + 1)
             x_false += '[-inf, %s]' % str(c)
