@@ -6,7 +6,7 @@ import re
 
 parser = argparse.ArgumentParser(description='Convert SSA to eSSA')
 parser.add_argument('-data_dir', type=str, default='../benchmark/')
-parser.add_argument('-phase', type=str, default='t1')
+parser.add_argument('-phase', type=str, default='t9')
 args = parser.parse_args()
 
 
@@ -92,10 +92,13 @@ class Function:  # 函数
                 return
 
     # 检查变量在当前路径上是否有被Use，如果没有就不需要添加var_t/var_f变量
-    def check_used_var(self, checked, cur_id, var):
+    def check_used_var(self, start_id, checked, cur_id, var):
         cur_blk = self.find_blk(cur_id)
         # 检查当前块的语句中是否使用了该变量
         for stat in cur_blk.statements:
+            # 如果回到了开始块，且变量出现在比较语句中，不算use
+            if cur_id == start_id and 'if' in stat:
+                return False
             # 如果不是赋值语句，只要出现就算Use，否则需要出现在' = '之后才算Use
             if stat.rfind(var) > stat.find(' = ') and 'ft' not in stat:
                 return True
@@ -107,13 +110,13 @@ class Function:  # 函数
         # 检查当前块的后继
         for blk_id in cur_blk.next:
             if blk_id not in checked and blk_id != self.blks[-1].id:
-                tmp_rst = self.check_used_var(checked, blk_id, var)
+                tmp_rst = self.check_used_var(start_id, checked, blk_id, var)
                 if tmp_rst:
                     return True
         return False
 
     # 将当前路径上所有旧变量的Use替换成新变量的Use，并在路径第一个块中初始化新变量
-    def insert_var(self, checked, cur_id, var_old, var_new, var_init):
+    def insert_var(self, start_id, checked, cur_id, var_old, var_new, var_init):
         blk = self.find_blk(cur_id)
         cont = True  # continue flag
         if var_old + '_t' == var_new:
@@ -121,6 +124,9 @@ class Function:  # 函数
         else:
             another = var_old + '_t'
         for i in range(0, len(blk.statements)):
+            if cur_id == start_id and 'if' in blk.statements[i]:
+                cont = False
+                break
             if blk.statements[i].find(var_old) > blk.statements[i].find(' = ') and 'ft' not in blk.statements[i]:
                 if another in blk.statements[i]:  # 当前变量既可以来自var_t，也可以来自var_f，所以变回var
                     blk.statements[i] = blk.statements[i].replace(another, var_old)
@@ -149,7 +155,7 @@ class Function:  # 函数
             return
         for blk_id in blk.next:
             if blk_id not in checked and blk_id != self.blks[-1].id:
-                self.insert_var(checked, blk_id, var_old, var_new, None)  # 后续的块不需要初始化
+                self.insert_var(start_id, checked, blk_id, var_old, var_new, None)  # 后续的块不需要初始化
 
     # 处理 var1 rel var2 型比较语句
     @staticmethod
@@ -237,7 +243,7 @@ class Function:  # 函数
             related_const = []  # 记录条件中的变量和常量
             for i in [0, 2]:
                 match = re.search(r'[a-zA-Z_]+', blk.cond[i])  # 只有带字母或下划线的才是变量，否则是常量
-                if match:
+                if match and match.group(0) != 'e':
                     related_vars.append(blk.cond[i])
                 else:
                     related_const.append(eval(blk.cond[i]))
@@ -246,29 +252,29 @@ class Function:  # 函数
             if len(related_const) == 0:  # var rel var的情况
                 var1_true, var1_false, var2_true, var2_false = Function.eval_cond_var(related_vars[0], related_vars[1],
                                                                                       blk.cond[1])
-                if self.check_used_var([], blk.next[0], related_vars[0]):
-                    self.insert_var([], blk.next[0], related_vars[0], related_vars[0] + '_t', var1_true)
-                if self.check_used_var([], blk.next[0], related_vars[1]):
-                    self.insert_var([], blk.next[0], related_vars[1], related_vars[1] + '_t', var2_true)
-                if self.check_used_var([], blk.next[1], related_vars[0]):
-                    self.insert_var([], blk.next[1], related_vars[0], related_vars[0] + '_f', var1_false)
-                if self.check_used_var([], blk.next[1], related_vars[1]):
-                    self.insert_var([], blk.next[1], related_vars[1], related_vars[1] + '_f', var2_false)
+                if self.check_used_var(blk.id, [], blk.next[0], related_vars[0]):
+                    self.insert_var(blk.id, [], blk.next[0], related_vars[0], related_vars[0] + '_t', var1_true)
+                if self.check_used_var(blk.id, [], blk.next[0], related_vars[1]):
+                    self.insert_var(blk.id, [], blk.next[0], related_vars[1], related_vars[1] + '_t', var2_true)
+                if self.check_used_var(blk.id, [], blk.next[1], related_vars[0]):
+                    self.insert_var(blk.id, [], blk.next[1], related_vars[0], related_vars[0] + '_f', var1_false)
+                if self.check_used_var(blk.id, [], blk.next[1], related_vars[1]):
+                    self.insert_var(blk.id, [], blk.next[1], related_vars[1], related_vars[1] + '_f', var2_false)
 
             else:  # var rel const的情况
                 var_true, var_false = Function.eval_cond_const(related_vars[0], related_const[0], blk.cond[1])
-                if self.check_used_var([], blk.next[0], related_vars[0]):
-                    self.insert_var([], blk.next[0], related_vars[0], related_vars[0] + '_t', var_true)
-                if self.check_used_var([], blk.next[1], related_vars[0]):
-                    self.insert_var([], blk.next[1], related_vars[0], related_vars[0] + '_f', var_false)
+                if self.check_used_var(blk.id, [], blk.next[0], related_vars[0]):
+                    self.insert_var(blk.id, [], blk.next[0], related_vars[0], related_vars[0] + '_t', var_true)
+                if self.check_used_var(blk.id, [], blk.next[1], related_vars[0]):
+                    self.insert_var(blk.id, [], blk.next[1], related_vars[0], related_vars[0] + '_f', var_false)
 
 
 # 将字符串转换成数值
 def my_eval(num):
     if num == '-inf':
-        return -1e20
+        return -float('inf')
     elif num == '+inf':
-        return 1e20
+        return float('inf')
     else:
         return eval(num)
 
