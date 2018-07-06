@@ -271,56 +271,63 @@ def futureRes(scc,graph):
                 f1=m.group(2).strip()
                 f2=m.group(3).strip()
                 print('future',terms)
-                if 'ft' in f1:
-                    if '+' in f1:
-                        factors=f1.split('+')
-                        #print(factors)
-                        v = re.match(r'^ft\((.*)\)$', factors[0].strip())
-                        for i in use:
-                            if graph.vertex[i]==v.group(1).strip():
-                                change=graph.ranges[i][0]+float(factors[1].strip())
-                                break
-                    elif '-' in f1:
-                        factors=f1.split('-')
-                        v = re.match(r'^ft\((.*)\)$', factors[0].strip())
-                        for i in use:
-                            if graph.vertex[i]==v.group(1).strip():
-                                change=graph.ranges[i][0]-float(factors[1].strip())
-                                break
-                    else:
-                        assert(re.match(r'^ft\((.*)\)$', f1))
-                        v=re.match(r'^ft\((.*)\)$', f1)
-                        for i in use:
-                            if graph.vertex[i]==v.group(1).strip():
-                                change=graph.ranges[i][0]
-                                break
-                    graph.vertex[constraint]=var+' = '+m.group(1).strip()+' ^ ['+str(change)+','+m.group(3).strip()+']'
-                    print(graph.vertex[constraint])
-                if 'ft' in f2:
-                    if '+' in f2:
-                        factors=f2.split('+')
-                        v = re.match(r'^ft\((.*)\)$', factors[0].strip())
-                        for i in use:
-                            if graph.vertex[i]==v.group(1).strip():
-                                change=graph.ranges[i][1]+float(factors[1].strip())
-                                break
-                    elif '-' in f2:
-                        factors=f2.split('-')
-                        v = re.match(r'^ft\((.*)\)$', factors[0].strip())
-                        for i in use:
-                            if graph.vertex[i]==v.group(1).strip():
-                                #print(graph.ranges[i][1])
-                                change=graph.ranges[i][1]-float(factors[1].strip())
-                                break
-                    else:
-                        assert(re.match(r'^ft\((.*)\)$', f2))
-                        v=re.match(r'^ft\((.*)\)$', f2)
-                        for i in use:
-                            if graph.vertex[i]==v.group(1).strip():
-                                change=graph.ranges[i][1]
-                                break
-                    graph.vertex[constraint]=var+' = '+m.group(1).strip()+' ^ ['+m.group(2).strip()+','+str(change)+']'
-                    print(graph.vertex[constraint])
+                if not len(use)==0 and graph.ranges[use[0]][0]=='s':
+                    graph.vertex[constraint] = var + ' = ' + m.group(1).strip() + ' ^ #'
+                else:
+                    if 'ft' in f1:
+                        if '+' in f1:
+                            factors = f1.split('+')
+                            # print(factors)
+                            v = re.match(r'^ft\((.*)\)$', factors[0].strip())
+                            for i in use:
+                                if graph.vertex[i] == v.group(1).strip():
+                                    change = graph.ranges[i][0] + float(factors[1].strip())
+                                    break
+                        elif '-' in f1:
+                            factors = f1.split('-')
+                            v = re.match(r'^ft\((.*)\)$', factors[0].strip())
+                            for i in use:
+                                if graph.vertex[i] == v.group(1).strip():
+                                    change = graph.ranges[i][0] - float(factors[1].strip())
+                                    break
+                        else:
+                            assert (re.match(r'^ft\((.*)\)$', f1))
+                            v = re.match(r'^ft\((.*)\)$', f1)
+                            for i in use:
+                                if graph.vertex[i] == v.group(1).strip():
+                                    change = graph.ranges[i][0]
+                                    break
+                        graph.vertex[constraint] = var + ' = ' + m.group(1).strip() + ' ^ [' + str(
+                            change) + ',' + m.group(3).strip() + ']'
+                        print(graph.vertex[constraint])
+                    if 'ft' in f2:
+                        if '+' in f2:
+                            factors = f2.split('+')
+                            v = re.match(r'^ft\((.*)\)$', factors[0].strip())
+                            for i in use:
+                                if graph.vertex[i] == v.group(1).strip():
+                                    change = graph.ranges[i][1] + float(factors[1].strip())
+                                    break
+                        elif '-' in f2:
+                            factors = f2.split('-')
+                            v = re.match(r'^ft\((.*)\)$', factors[0].strip())
+                            for i in use:
+                                if graph.vertex[i] == v.group(1).strip():
+                                    # print(graph.ranges[i][1])
+                                    change = graph.ranges[i][1] - float(factors[1].strip())
+                                    break
+                        else:
+                            assert (re.match(r'^ft\((.*)\)$', f2))
+                            v = re.match(r'^ft\((.*)\)$', f2)
+                            for i in use:
+                                if graph.vertex[i] == v.group(1).strip():
+                                    change = graph.ranges[i][1]
+                                    break
+                        graph.vertex[constraint] = var + ' = ' + m.group(1).strip() + ' ^ [' + m.group(
+                            2).strip() + ',' + str(change) + ']'
+                        print(graph.vertex[constraint])
+
+
 
 
 def narrowSCC(scc,graph):
@@ -460,7 +467,7 @@ def determineRangeN(i,graph,ranges):
                     ranges[i][1] = max(l1, l2, l3, l4)
 
         elif '^' in exp:
-            if not ranges[use[0]][0] == 's':
+            if not ranges[use[0]][0] == 's' and not '#' in exp:
                 m = re.match(r'^(.*)\^\s*\[(.*),(.*)\]$', exp)
                 if m.group(2).strip() == '-inf' or 'ft' in m.group(2):
                     l = float('-inf')
