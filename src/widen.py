@@ -86,11 +86,13 @@ def determineRange(i,graph,ranges):
                 ranges[i][0] = float(x1)+float(x2)
                 ranges[i][1] = float(x1)+float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = ranges[use[0]][0]+float(x2)
-                ranges[i][1] = ranges[use[0]][1]+float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]+float(x2)
+                    ranges[i][1] = ranges[use[0]][1]+float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
-                ranges[i][0] = ranges[use[0]][0]+float(x1)
-                ranges[i][1] = ranges[use[0]][1]+float(x1)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]+float(x1)
+                    ranges[i][1] = ranges[use[0]][1]+float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
@@ -114,6 +116,7 @@ def determineRange(i,graph,ranges):
                 ranges[i][1] = ranges[use[0]][1]
 
 
+
         elif '*' in exp:
             factors = exp.split('*')
             x1 = factors[0].strip()
@@ -130,11 +133,13 @@ def determineRange(i,graph,ranges):
                 ranges[i][0] = float(x1)*float(x2)
                 ranges[i][1] = float(x1)*float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = ranges[use[0]][0]*float(x2)
-                ranges[i][1] = ranges[use[0]][1]*float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]*float(x2)
+                    ranges[i][1] = ranges[use[0]][1]*float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
-                ranges[i][0] = ranges[use[0]][0]*float(x1)
-                ranges[i][1] = ranges[use[0]][1]*float(x1)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]*float(x1)
+                    ranges[i][1] = ranges[use[0]][1]*float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -159,6 +164,11 @@ def determineRange(i,graph,ranges):
                 assert (len(use) == 1)
                 ranges[i][0] = max(ranges[use[0]][0], l)
                 ranges[i][1] = min(ranges[use[0]][1], u)
+                if ranges[i][0] > ranges[i][1]:
+                    '''print(exp)
+                    assert(False)'''
+                    ranges[i][0]='s'
+                    ranges[i][1]='s'
         elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',exp):
             ranges[i][0]=float(exp)
             ranges[i][1] = float(exp)
@@ -180,11 +190,13 @@ def determineRange(i,graph,ranges):
                 ranges[i][0] = float(x1) - float(x2)
                 ranges[i][1] = float(x1) - float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
-                ranges[i][0] = ranges[use[0]][0] - float(x2)
-                ranges[i][1] = ranges[use[0]][1] - float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0] - float(x2)
+                    ranges[i][1] = ranges[use[0]][1] - float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
-                ranges[i][0] = float(x1) -ranges[use[0]][1]
-                ranges[i][1] = float(x1) -ranges[use[0]][0]
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = float(x1) -ranges[use[0]][1]
+                    ranges[i][1] = float(x1) -ranges[use[0]][0]
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -206,11 +218,13 @@ def determineRange(i,graph,ranges):
                 ranges[i][0] = float(x1)/float(x2)
                 ranges[i][1] = float(x1)/float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = ranges[use[0]][0]/float(x2)
-                ranges[i][1] = ranges[use[0]][1]/float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]/float(x2)
+                    ranges[i][1] = ranges[use[0]][1]/float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
-                ranges[i][0] = ranges[use[0]][0]/float(x1)
-                ranges[i][1] = ranges[use[0]][1]/float(x1)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]/float(x1)
+                    ranges[i][1] = ranges[use[0]][1]/float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -381,11 +395,13 @@ def determineRangeN(i,graph,ranges):
                 ranges[i][0] = float(x1) + float(x2)
                 ranges[i][1] = float(x1) + float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
-                ranges[i][0] = ranges[use[0]][0] + float(x2)
-                ranges[i][1] = ranges[use[0]][1] + float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0] + float(x2)
+                    ranges[i][1] = ranges[use[0]][1] + float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
-                ranges[i][0] = ranges[use[0]][0] + float(x1)
-                ranges[i][1] = ranges[use[0]][1] + float(x1)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0] + float(x1)
+                    ranges[i][1] = ranges[use[0]][1] + float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
@@ -426,11 +442,13 @@ def determineRangeN(i,graph,ranges):
                 ranges[i][0] = float(x1)*float(x2)
                 ranges[i][1] = float(x1)*float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = ranges[use[0]][0]*float(x2)
-                ranges[i][1] = ranges[use[0]][1]*float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]*float(x2)
+                    ranges[i][1] = ranges[use[0]][1]*float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
-                ranges[i][0] = ranges[use[0]][0]*float(x1)
-                ranges[i][1] = ranges[use[0]][1]*float(x1)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]*float(x1)
+                    ranges[i][1] = ranges[use[0]][1]*float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -455,6 +473,9 @@ def determineRangeN(i,graph,ranges):
                 assert (len(use) == 1)
                 ranges[i][0] = max(ranges[use[0]][0], l)
                 ranges[i][1] = min(ranges[use[0]][1], u)
+                if ranges[i][0] > ranges[i][1]:
+                    ranges[i][0]='s'
+                    ranges[i][1]='s'
         elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',exp):
             ranges[i][0]=float(exp)
             ranges[i][1] = float(exp)
@@ -476,11 +497,13 @@ def determineRangeN(i,graph,ranges):
                 ranges[i][0] = float(x1) - float(x2)
                 ranges[i][1] = float(x1) - float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
-                ranges[i][0] = ranges[use[0]][0] - float(x2)
-                ranges[i][1] = ranges[use[0]][1] - float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0] - float(x2)
+                    ranges[i][1] = ranges[use[0]][1] - float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
-                ranges[i][0] = float(x1) -ranges[use[0]][1]
-                ranges[i][1] = float(x1) -ranges[use[0]][0]
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = float(x1) -ranges[use[0]][1]
+                    ranges[i][1] = float(x1) -ranges[use[0]][0]
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -502,11 +525,13 @@ def determineRangeN(i,graph,ranges):
                 ranges[i][0] = float(x1)/float(x2)
                 ranges[i][1] = float(x1)/float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = ranges[use[0]][0]/float(x2)
-                ranges[i][1] = ranges[use[0]][1]/float(x2)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]/float(x2)
+                    ranges[i][1] = ranges[use[0]][1]/float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
-                ranges[i][0] = ranges[use[0]][0]/float(x1)
-                ranges[i][1] = ranges[use[0]][1]/float(x1)
+                if not ranges[use[0]][0] == 's':
+                    ranges[i][0] = ranges[use[0]][0]/float(x1)
+                    ranges[i][1] = ranges[use[0]][1]/float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -525,7 +550,7 @@ def determineRangeN(i,graph,ranges):
     else:
         assert(i in graph.vars)
         assert (len(use) == 1)
-        assert not (ranges[i][0]=='s' or ranges[use[0]][0]=='s')
+        #assert not (ranges[i][0]=='s' or ranges[use[0]][0]=='s')
         if ranges[i][0]==float('-inf') and ranges[use[0]][0]>float('-inf'):
             ranges[i][0] = ranges[use[0]][0]
         elif ranges[use[0]][0]<ranges[i][0]:
