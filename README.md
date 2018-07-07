@@ -76,6 +76,7 @@ _10 = j_7 - i_1;
 图构建好之后，利用Kosaraju算法求图中的强连通分量，并拓扑排序。
 
 `widen.py`:
+
 对排好序的极大联通子图依次进行widening, future resolution, narrowing三步
 widening：对于每个联通子图，除去2边（future依赖）后再通过Kosaraju算法求得极大联通子图，对于其中每一个widening 
 future resolution：每个联通子图future resolution，如果依赖变量为空集
