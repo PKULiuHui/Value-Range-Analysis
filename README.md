@@ -3,7 +3,7 @@
 
 小组成员
 -------
-刘辉（1500012855），杨靖峰（）
+刘辉（1500012855），杨靖锋（）
 
 基本思路
 ------
@@ -11,7 +11,7 @@
 
 组员分工
 ------
-刘辉负责前半部分：解析SSA文件生成eSSA代码、constraints graph的构建、求强连通分量。杨靖峰负责后半部分：对每个强连通分量按照拓扑序执行Widening，Future resolution，Narrowing三步处理，最终求得各变量的取值范围。
+刘辉负责前半部分：解析SSA文件生成eSSA代码、constraints graph的构建、求强连通分量。杨靖锋负责后半部分：对每个强连通分量按照拓扑序执行Widening，Future resolution，Narrowing三步处理，最终求得各变量的取值范围。
 
 测试方法
 -------
@@ -76,3 +76,10 @@ _10 = j_7 - i_1;
 图构建好之后，利用Kosaraju算法求图中的强连通分量，并拓扑排序。
 
 `widen.py`:
+对排好序的极大联通子图依次进行widening, future resolution, narrowing三步
+widening：对于每个联通子图，除去2边（future依赖）后再通过Kosaraju算法求得极大联通子图，对于其中每一个widening 
+future resolution：每个联通子图future resolution，如果依赖变量为空集
+narrowing: 对于每个联通子图，除去2边（future依赖）后再通过Kosaraju算法求得极大联通子图，对于其中每一个narrowing
+widening和narrowing遍历图直到没有更新，每个变量节点和constraint节点都有一个范围，遍历到该节点时根据规则更新或不更新范围
+输出最后输出节点的范围
+widening, future resolution, narrowing的规则在论文中给出
