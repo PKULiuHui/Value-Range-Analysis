@@ -1,3 +1,4 @@
+# coding: utf-8
 import argparse
 import re
 from ssa2essa import eSSA
@@ -12,106 +13,110 @@ parser.add_argument('-data_dir', type=str, default='../benchmark/')
 parser.add_argument('-phase', type=str, default='t1')
 args = parser.parse_args()
 
-def widenSCC(scc,graph):
+
+def widenSCC(scc, graph):
     while True:
-        ranges=widenSCConce(scc,graph,graph.ranges)
-        flag=0
+        ranges = widenSCConce(scc, graph, graph.ranges)
+        flag = 0
         for i in scc:
-            if not ranges[i]==graph.ranges[i]:
-                flag=1
-        if flag==0:
+            if not ranges[i] == graph.ranges[i]:
+                flag = 1
+        if flag == 0:
             break
         else:
-            graph.ranges=ranges
-        print('!!',graph.ranges)
+            graph.ranges = ranges
+        print('!!', graph.ranges)
 
-def widenSCConce(scc,graph,initialRange):
-    ranges=copy.deepcopy(initialRange)
 
-    reached=[]
-    flag=0
+def widenSCConce(scc, graph, initialRange):
+    ranges = copy.deepcopy(initialRange)
+
+    reached = []
+    flag = 0
     for i in scc:
         for j in range(len(initialRange)):
-            if graph.matrix[j][i]==1 and not j in scc:
-                dfs(ranges,i,graph,scc,reached)
-                flag=1
+            if graph.matrix[j][i] == 1 and not j in scc:
+                dfs(ranges, i, graph, scc, reached)
+                flag = 1
                 break
-        if flag==1:
+        if flag == 1:
             break
-    if flag==0:
+    if flag == 0:
         dfs(ranges, scc[0], graph, scc, reached)
     return ranges
 
 
-def dfs(ranges,i,graph,scc,reached):
-    determineRange(i,graph,ranges)
-    reached+=[i]
+def dfs(ranges, i, graph, scc, reached):
+    determineRange(i, graph, ranges)
+    reached += [i]
     for j in range(len(ranges)):
-        if graph.matrix[i][j]==1 and j in scc and not j in reached:
-            dfs(ranges,j,graph,scc,reached)
+        if graph.matrix[i][j] == 1 and j in scc and not j in reached:
+            dfs(ranges, j, graph, scc, reached)
 
-def determineRange(i,graph,ranges):
+
+def determineRange(i, graph, ranges):
     use = []
     for j in range(len(ranges)):
         if graph.matrix[j][i] == 1:
             use += [j]
     if i in graph.cons:
         assert ('=' in graph.vertex[i])
-        terms=graph.vertex[i].split('=')
-        #var=terms[0].strip()
-        exp=terms[1].replace('(float)','').strip()
-        print('widen',terms)
-        if re.match(r'^\[(.*),(.*)\]$',exp):
-            m=re.match(r'^\[(.*),(.*)\]$',exp)
-            x1=m.group(1).strip()
-            x2=m.group(2).strip()
-            if x1=='-inf' or 'ft' in x1:
-                ranges[i][0]=float('-inf')
+        terms = graph.vertex[i].split('=')
+        # var=terms[0].strip()
+        exp = terms[1].replace('(float)', '').strip()
+        print('widen', terms)
+        if re.match(r'^\[(.*),(.*)\]$', exp):
+            m = re.match(r'^\[(.*),(.*)\]$', exp)
+            x1 = m.group(1).strip()
+            x2 = m.group(2).strip()
+            if x1 == '-inf' or 'ft' in x1:
+                ranges[i][0] = float('-inf')
             else:
                 ranges[i][0] = float(x1)
-            if x2=='+inf' or 'ft' in x2:
-                ranges[i][1]=float('+inf')
+            if x2 == '+inf' or 'ft' in x2:
+                ranges[i][1] = float('+inf')
             else:
                 ranges[i][1] = float(x2)
         elif ' + ' in exp:
-            factors=exp.split(' + ')
-            x1=factors[0].strip()
-            x2=factors[1].strip()
-            if x1==x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
-                assert (len(use) ==1)
-                if not ranges[use[0]][0]=='s':
+            factors = exp.split(' + ')
+            x1 = factors[0].strip()
+            x2 = factors[1].strip()
+            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
+                assert (len(use) == 1)
+                if not ranges[use[0]][0] == 's':
                     ranges[i][0] = ranges[use[0]][0] + ranges[use[0]][0]
                     ranges[i][1] = ranges[use[0]][1] + ranges[use[0]][1]
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1) and re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = float(x1)+float(x2)
-                ranges[i][1] = float(x1)+float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1) and re.match(
+                    r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
+                ranges[i][0] = float(x1) + float(x2)
+                ranges[i][1] = float(x1) + float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]+float(x2)
-                    ranges[i][1] = ranges[use[0]][1]+float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+                    ranges[i][0] = ranges[use[0]][0] + float(x2)
+                    ranges[i][1] = ranges[use[0]][1] + float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]+float(x1)
-                    ranges[i][1] = ranges[use[0]][1]+float(x1)
+                    ranges[i][0] = ranges[use[0]][0] + float(x1)
+                    ranges[i][1] = ranges[use[0]][1] + float(x1)
             else:
                 assert (len(use) == 2)
-                if not ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
+                if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
                     ranges[i][0] = ranges[use[0]][0] + ranges[use[1]][0]
                     ranges[i][1] = ranges[use[0]][1] + ranges[use[1]][1]
 
         elif 'PHI' in exp:
-            m=re.match(r'^PHI\s*<(.*),(.*)>$', exp)
+            m = re.match(r'^PHI\s*<(.*),(.*)>$', exp)
             x1 = m.group(1).strip()
             x2 = m.group(2).strip()
-            assert not (x1==x2)
+            assert not (x1 == x2)
             assert (len(use) == 2)
-            if not ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
+            if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
                 ranges[i][0] = min(ranges[use[0]][0], ranges[use[1]][0])
                 ranges[i][1] = max(ranges[use[0]][1], ranges[use[1]][1])
-            elif ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
-                ranges[i][0]=ranges[use[1]][0]
+            elif ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
+                ranges[i][0] = ranges[use[1]][0]
                 ranges[i][1] = ranges[use[1]][1]
-            elif ranges[use[1]][0]=='s' and not ranges[use[0]][0]=='s':
+            elif ranges[use[1]][0] == 's' and not ranges[use[0]][0] == 's':
                 ranges[i][0] = ranges[use[0]][0]
                 ranges[i][1] = ranges[use[0]][1]
 
@@ -121,7 +126,7 @@ def determineRange(i,graph,ranges):
             factors = exp.split('*')
             x1 = factors[0].strip()
             x2 = factors[1].strip()
-            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 assert (len(use) == 1)
                 if not ranges[use[0]][0] == 's':
                     l1 = ranges[use[0]][0] * ranges[use[0]][0]
@@ -129,17 +134,18 @@ def determineRange(i,graph,ranges):
                     l3 = ranges[use[0]][1] * ranges[use[0]][1]
                     ranges[i][0] = min(l1, l2, l3)
                     ranges[i][1] = max(l1, l2, l3)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1) and re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = float(x1)*float(x2)
-                ranges[i][1] = float(x1)*float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1) and re.match(
+                    r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
+                ranges[i][0] = float(x1) * float(x2)
+                ranges[i][1] = float(x1) * float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]*float(x2)
-                    ranges[i][1] = ranges[use[0]][1]*float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+                    ranges[i][0] = ranges[use[0]][0] * float(x2)
+                    ranges[i][1] = ranges[use[0]][1] * float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]*float(x1)
-                    ranges[i][1] = ranges[use[0]][1]*float(x1)
+                    ranges[i][0] = ranges[use[0]][0] * float(x1)
+                    ranges[i][1] = ranges[use[0]][1] * float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -167,16 +173,16 @@ def determineRange(i,graph,ranges):
                 if ranges[i][0] > ranges[i][1]:
                     '''print(exp)
                     assert(False)'''
-                    ranges[i][0]='s'
-                    ranges[i][1]='s'
-        elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',exp):
-            ranges[i][0]=float(exp)
+                    ranges[i][0] = 's'
+                    ranges[i][1] = 's'
+        elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', exp):
+            ranges[i][0] = float(exp)
             ranges[i][1] = float(exp)
-        elif re.match(r'^(\w+_\d+(_\w)?|_\d+)$',exp):
+        elif re.match(r'^(\w+_\d+(_\w)?|_\d+)$', exp):
             assert (len(use) == 1)
-            ranges[i][0]=ranges[use[0]][0]
+            ranges[i][0] = ranges[use[0]][0]
             ranges[i][1] = ranges[use[0]][1]
-        elif ' - ' in exp :
+        elif ' - ' in exp:
             factors = exp.split(' - ')
             x1 = factors[0].strip()
             x2 = factors[1].strip()
@@ -195,18 +201,18 @@ def determineRange(i,graph,ranges):
                     ranges[i][1] = ranges[use[0]][1] - float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = float(x1) -ranges[use[0]][1]
-                    ranges[i][1] = float(x1) -ranges[use[0]][0]
+                    ranges[i][0] = float(x1) - ranges[use[0]][1]
+                    ranges[i][1] = float(x1) - ranges[use[0]][0]
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
-                    ranges[i][0] = ranges[graph.v2id[x1]][0]-ranges[graph.v2id[x2]][1]
+                    ranges[i][0] = ranges[graph.v2id[x1]][0] - ranges[graph.v2id[x2]][1]
                     ranges[i][1] = ranges[graph.v2id[x1]][1] - ranges[graph.v2id[x2]][0]
         elif '/' in exp:
             factors = exp.split('/')
             x1 = factors[0].strip()
             x2 = factors[1].strip()
-            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 assert (len(use) == 1)
                 if not ranges[use[0]][0] == 's':
                     l1 = ranges[use[0]][0] / ranges[use[0]][0]
@@ -214,17 +220,18 @@ def determineRange(i,graph,ranges):
                     l3 = ranges[use[0]][1] / ranges[use[0]][1]
                     ranges[i][0] = min(l1, l2, l3)
                     ranges[i][1] = max(l1, l2, l3)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1) and re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = float(x1)/float(x2)
-                ranges[i][1] = float(x1)/float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1) and re.match(
+                    r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
+                ranges[i][0] = float(x1) / float(x2)
+                ranges[i][1] = float(x1) / float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]/float(x2)
-                    ranges[i][1] = ranges[use[0]][1]/float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+                    ranges[i][0] = ranges[use[0]][0] / float(x2)
+                    ranges[i][1] = ranges[use[0]][1] / float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]/float(x1)
-                    ranges[i][1] = ranges[use[0]][1]/float(x1)
+                    ranges[i][0] = ranges[use[0]][0] / float(x1)
+                    ranges[i][1] = ranges[use[0]][1] / float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -237,41 +244,41 @@ def determineRange(i,graph,ranges):
 
         elif exp.startswith('(int)'):
             assert (len(use) == 1)
-            ranges[i][0]=math.floor(ranges[use[0]][0])
+            ranges[i][0] = math.floor(ranges[use[0]][0])
             ranges[i][1] = math.ceil(ranges[use[0]][1])
         else:
-            print('!!!',exp)
+            print('!!!', exp)
     else:
-        assert(i in graph.vars)
+        assert (i in graph.vars)
         print(graph.vertex[i])
         assert (len(use) == 1)
-        if ranges[i][0]=='s' and not ranges[use[0]][0]=='s':
-            ranges[i][0]=ranges[use[0]][0]
-            ranges[i][1]=ranges[use[0]][1]
-        elif not ranges[i][0]=='s' and not ranges[use[0]][0]=='s':
-            if ranges[use[0]][0]<ranges[i][0]:
-                ranges[i][0]=float('-inf')
-            if ranges[use[0]][1]>ranges[i][1]:
-                ranges[i][1]=float('+inf')
+        if ranges[i][0] == 's' and not ranges[use[0]][0] == 's':
+            ranges[i][0] = ranges[use[0]][0]
+            ranges[i][1] = ranges[use[0]][1]
+        elif not ranges[i][0] == 's' and not ranges[use[0]][0] == 's':
+            if ranges[use[0]][0] < ranges[i][0]:
+                ranges[i][0] = float('-inf')
+            if ranges[use[0]][1] > ranges[i][1]:
+                ranges[i][1] = float('+inf')
 
 
-def futureRes(scc,graph):
+def futureRes(scc, graph):
     for constraint in scc:
         if constraint in graph.cons:
-            use=[]
+            use = []
             for j in range(len(graph.ranges)):
                 if graph.matrix[j][constraint] == 2:
                     use += [j]
             assert ('=' in graph.vertex[constraint])
             terms = graph.vertex[constraint].split('=')
-            var=terms[0].strip()
+            var = terms[0].strip()
             exp = terms[1].strip()
             if '^' in exp:
                 m = re.match(r'^(.*)\^\s*\[(.*),(.*)\]$', exp)
-                f1=m.group(2).strip()
-                f2=m.group(3).strip()
-                print('future',terms)
-                if not len(use)==0 and graph.ranges[use[0]][0]=='s':
+                f1 = m.group(2).strip()
+                f2 = m.group(3).strip()
+                print('future', terms)
+                if not len(use) == 0 and graph.ranges[use[0]][0] == 's':
                     graph.vertex[constraint] = var + ' = ' + m.group(1).strip() + ' ^ #'
                 else:
                     if 'ft' in f1:
@@ -328,73 +335,72 @@ def futureRes(scc,graph):
                         print(graph.vertex[constraint])
 
 
-
-
-def narrowSCC(scc,graph):
+def narrowSCC(scc, graph):
     while True:
-        ranges=narrowSCConce(scc,graph,graph.ranges)
-        flag=0
+        ranges = narrowSCConce(scc, graph, graph.ranges)
+        flag = 0
         for i in scc:
-            if not ranges[i]==graph.ranges[i]:
-                flag=1
-        if flag==0:
+            if not ranges[i] == graph.ranges[i]:
+                flag = 1
+        if flag == 0:
             break
         else:
-            graph.ranges=ranges
+            graph.ranges = ranges
 
 
-def narrowSCConce(scc,graph,initialRange):
-    ranges=copy.deepcopy(initialRange)
-    reached=[]
-    flag=0
+def narrowSCConce(scc, graph, initialRange):
+    ranges = copy.deepcopy(initialRange)
+    reached = []
+    flag = 0
     for i in scc:
         for j in range(len(initialRange)):
-            if graph.matrix[j][i]==1 and not j in scc:
-                dfsN(ranges,i,graph,scc,reached)
-                flag=1
+            if graph.matrix[j][i] == 1 and not j in scc:
+                dfsN(ranges, i, graph, scc, reached)
+                flag = 1
                 break
-        if flag==1:
+        if flag == 1:
             break
     return ranges
 
 
-def dfsN(ranges,i,graph,scc,reached):
-    determineRangeN(i,graph,ranges)
-    reached+=[i]
+def dfsN(ranges, i, graph, scc, reached):
+    determineRangeN(i, graph, ranges)
+    reached += [i]
     for j in range(len(ranges)):
-        if graph.matrix[i][j]==1 and j in scc and not j in reached:
-            dfsN(ranges,j,graph,scc,reached)
+        if graph.matrix[i][j] == 1 and j in scc and not j in reached:
+            dfsN(ranges, j, graph, scc, reached)
 
-def determineRangeN(i,graph,ranges):
+
+def determineRangeN(i, graph, ranges):
     use = []
     for j in range(len(ranges)):
         if graph.matrix[j][i] == 1:
             use += [j]
     if i in graph.cons:
         assert ('=' in graph.vertex[i])
-        terms=graph.vertex[i].split('=')
-        print('narowing',terms)
-        #var=terms[0].strip()
-        exp=terms[1].replace('(float)','').strip()
-        if re.match(r'^\[(.*),(.*)\]$',exp):
-            m=re.match(r'^\[(.*),(.*)\]$',exp)
-            x1=m.group(1).strip()
-            x2=m.group(2).strip()
-            if x1=='-inf' or 'ft' in x1:
-                ranges[i][0]=float('-inf')
+        terms = graph.vertex[i].split('=')
+        print('narowing', terms)
+        # var=terms[0].strip()
+        exp = terms[1].replace('(float)', '').strip()
+        if re.match(r'^\[(.*),(.*)\]$', exp):
+            m = re.match(r'^\[(.*),(.*)\]$', exp)
+            x1 = m.group(1).strip()
+            x2 = m.group(2).strip()
+            if x1 == '-inf' or 'ft' in x1:
+                ranges[i][0] = float('-inf')
             else:
                 ranges[i][0] = float(x1)
-            if x2=='+inf' or 'ft' in x2:
-                ranges[i][1]=float('+inf')
+            if x2 == '+inf' or 'ft' in x2:
+                ranges[i][1] = float('+inf')
             else:
                 ranges[i][1] = float(x2)
         elif ' + ' in exp:
-            factors=exp.split(' + ')
-            x1=factors[0].strip()
-            x2=factors[1].strip()
-            if x1==x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
-                assert (len(use) ==1)
-                if not ranges[use[0]][0]=='s':
+            factors = exp.split(' + ')
+            x1 = factors[0].strip()
+            x2 = factors[1].strip()
+            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
+                assert (len(use) == 1)
+                if not ranges[use[0]][0] == 's':
                     ranges[i][0] = ranges[use[0]][0] + ranges[use[0]][0]
                     ranges[i][1] = ranges[use[0]][1] + ranges[use[0]][1]
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1) and re.match(
@@ -411,24 +417,24 @@ def determineRangeN(i,graph,ranges):
                     ranges[i][1] = ranges[use[0]][1] + float(x1)
             else:
                 assert (len(use) == 2)
-                if not ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
+                if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
                     ranges[i][0] = ranges[use[0]][0] + ranges[use[1]][0]
                     ranges[i][1] = ranges[use[0]][1] + ranges[use[1]][1]
 
 
         elif 'PHI' in exp:
-            m=re.match(r'^PHI\s*<(.*),(.*)>$', exp)
+            m = re.match(r'^PHI\s*<(.*),(.*)>$', exp)
             x1 = m.group(1).strip()
             x2 = m.group(2).strip()
-            assert not (x1==x2)
+            assert not (x1 == x2)
             assert (len(use) == 2)
-            if not ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
+            if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
                 ranges[i][0] = min(ranges[use[0]][0], ranges[use[1]][0])
                 ranges[i][1] = max(ranges[use[0]][1], ranges[use[1]][1])
-            elif ranges[use[0]][0]=='s' and not ranges[use[1]][0]=='s':
-                ranges[i][0]=ranges[use[1]][0]
+            elif ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
+                ranges[i][0] = ranges[use[1]][0]
                 ranges[i][1] = ranges[use[1]][1]
-            elif ranges[use[1]][0]=='s' and not ranges[use[0]][0]=='s':
+            elif ranges[use[1]][0] == 's' and not ranges[use[0]][0] == 's':
                 ranges[i][0] = ranges[use[0]][0]
                 ranges[i][1] = ranges[use[0]][1]
 
@@ -445,17 +451,18 @@ def determineRangeN(i,graph,ranges):
                     l3 = ranges[use[0]][1] * ranges[use[0]][1]
                     ranges[i][0] = min(l1, l2, l3)
                     ranges[i][1] = max(l1, l2, l3)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1) and re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = float(x1)*float(x2)
-                ranges[i][1] = float(x1)*float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1) and re.match(
+                    r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
+                ranges[i][0] = float(x1) * float(x2)
+                ranges[i][1] = float(x1) * float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]*float(x2)
-                    ranges[i][1] = ranges[use[0]][1]*float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+                    ranges[i][0] = ranges[use[0]][0] * float(x2)
+                    ranges[i][1] = ranges[use[0]][1] * float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]*float(x1)
-                    ranges[i][1] = ranges[use[0]][1]*float(x1)
+                    ranges[i][0] = ranges[use[0]][0] * float(x1)
+                    ranges[i][1] = ranges[use[0]][1] * float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -481,14 +488,14 @@ def determineRangeN(i,graph,ranges):
                 ranges[i][0] = max(ranges[use[0]][0], l)
                 ranges[i][1] = min(ranges[use[0]][1], u)
                 if ranges[i][0] > ranges[i][1]:
-                    ranges[i][0]='s'
-                    ranges[i][1]='s'
-        elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',exp):
-            ranges[i][0]=float(exp)
+                    ranges[i][0] = 's'
+                    ranges[i][1] = 's'
+        elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', exp):
+            ranges[i][0] = float(exp)
             ranges[i][1] = float(exp)
-        elif re.match(r'^(\w+_\d+(_\w)?|_\d+)$',exp):
+        elif re.match(r'^(\w+_\d+(_\w)?|_\d+)$', exp):
             assert (len(use) == 1)
-            ranges[i][0]=ranges[use[0]][0]
+            ranges[i][0] = ranges[use[0]][0]
             ranges[i][1] = ranges[use[0]][1]
         elif ' - ' in exp:
             factors = exp.split(' - ')
@@ -509,18 +516,18 @@ def determineRangeN(i,graph,ranges):
                     ranges[i][1] = ranges[use[0]][1] - float(x2)
             elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = float(x1) -ranges[use[0]][1]
-                    ranges[i][1] = float(x1) -ranges[use[0]][0]
+                    ranges[i][0] = float(x1) - ranges[use[0]][1]
+                    ranges[i][1] = float(x1) - ranges[use[0]][0]
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
-                    ranges[i][0] = ranges[graph.v2id[x1]][0]-ranges[graph.v2id[x2]][1]
+                    ranges[i][0] = ranges[graph.v2id[x1]][0] - ranges[graph.v2id[x2]][1]
                     ranges[i][1] = ranges[graph.v2id[x1]][1] - ranges[graph.v2id[x2]][0]
         elif '/' in exp:
             factors = exp.split('/')
             x1 = factors[0].strip()
             x2 = factors[1].strip()
-            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+            if x1 == x2 and not re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 assert (len(use) == 1)
                 if not ranges[use[0]][0] == 's':
                     l1 = ranges[use[0]][0] / ranges[use[0]][0]
@@ -528,17 +535,18 @@ def determineRangeN(i,graph,ranges):
                     l3 = ranges[use[0]][1] / ranges[use[0]][1]
                     ranges[i][0] = min(l1, l2, l3)
                     ranges[i][1] = max(l1, l2, l3)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1) and re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
-                ranges[i][0] = float(x1)/float(x2)
-                ranges[i][1] = float(x1)/float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x2):
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1) and re.match(
+                    r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
+                ranges[i][0] = float(x1) / float(x2)
+                ranges[i][1] = float(x1) / float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x2):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]/float(x2)
-                    ranges[i][1] = ranges[use[0]][1]/float(x2)
-            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$',x1):
+                    ranges[i][0] = ranges[use[0]][0] / float(x2)
+                    ranges[i][1] = ranges[use[0]][1] / float(x2)
+            elif re.match(r'^(\+|-)?[0-9]+(.[0-9]+)?(e(\+|-)[0-9]+)?$', x1):
                 if not ranges[use[0]][0] == 's':
-                    ranges[i][0] = ranges[use[0]][0]/float(x1)
-                    ranges[i][1] = ranges[use[0]][1]/float(x1)
+                    ranges[i][0] = ranges[use[0]][0] / float(x1)
+                    ranges[i][1] = ranges[use[0]][1] / float(x1)
             else:
                 assert (len(use) == 2)
                 if not ranges[use[0]][0] == 's' and not ranges[use[1]][0] == 's':
@@ -550,25 +558,26 @@ def determineRangeN(i,graph,ranges):
                     ranges[i][1] = max(l1, l2, l3, l4)
         elif exp.startswith('(int)'):
             assert (len(use) == 1)
-            ranges[i][0]=math.floor(ranges[use[0]][0])
+            ranges[i][0] = math.floor(ranges[use[0]][0])
             ranges[i][1] = math.ceil(ranges[use[0]][1])
         else:
-            print('!!!',exp)
+            print('!!!', exp)
     else:
-        assert(i in graph.vars)
+        assert (i in graph.vars)
         assert (len(use) == 1)
-        #assert not (ranges[i][0]=='s' or ranges[use[0]][0]=='s')
-        if ranges[i][0]==float('-inf') and ranges[use[0]][0]>float('-inf'):
+        # assert not (ranges[i][0]=='s' or ranges[use[0]][0]=='s')
+        if ranges[i][0] == float('-inf') and ranges[use[0]][0] > float('-inf'):
             ranges[i][0] = ranges[use[0]][0]
-        elif ranges[use[0]][0]<ranges[i][0]:
+        elif ranges[use[0]][0] < ranges[i][0]:
             ranges[i][0] = ranges[use[0]][0]
-        if ranges[i][1]==float('+inf') and ranges[use[0]][1]<float('+inf'):
+        if ranges[i][1] == float('+inf') and ranges[use[0]][1] < float('+inf'):
             ranges[i][1] = ranges[use[0]][1]
-        elif ranges[use[0]][1]>ranges[i][1]:
+        elif ranges[use[0]][1] > ranges[i][1]:
             ranges[i][1] = ranges[use[0]][1]
 
-def departScc(scc,graph):
-    sccs=[]
+
+def departScc(scc, graph):
+    sccs = []
     r_matrix = [[0] * len(graph.vertex) for i in range(0, len(graph.vertex))]
     for i in range(0, len(graph.vertex)):
         for j in range(0, len(graph.vertex)):
@@ -578,7 +587,7 @@ def departScc(scc,graph):
     order = []
     for i in range(0, len(graph.matrix)):
         if i in scc and i not in reached:
-            r_dfsSCC(reached, order, r_matrix, i,scc)
+            r_dfsSCC(reached, order, r_matrix, i, scc)
     order.reverse()
 
     reached = []
@@ -586,34 +595,36 @@ def departScc(scc,graph):
         idx = order[i]
         if idx in scc and idx not in reached:
             record = []
-            dfsSCC(reached, record, graph.matrix, idx,scc)
+            dfsSCC(reached, record, graph.matrix, idx, scc)
             sccs.append(record)
     return sccs
 
-def r_dfsSCC(reached, order, matrix, vid,scc):
+
+def r_dfsSCC(reached, order, matrix, vid, scc):
     reached.append(vid)
     for j in range(0, len(matrix)):
-        if matrix[vid][j] ==1 and j not in reached and j in scc:
-            r_dfsSCC(reached, order, matrix, j,scc)
+        if matrix[vid][j] == 1 and j not in reached and j in scc:
+            r_dfsSCC(reached, order, matrix, j, scc)
     order.append(vid)
 
-def dfsSCC(reached, record, matrix, vid,scc):
+
+def dfsSCC(reached, record, matrix, vid, scc):
     reached.append(vid)
     record.append(vid)
     for j in range(0, len(matrix)):
-        if matrix[vid][j] ==1 and j not in reached and j in scc:
-            dfsSCC(reached, record, matrix, j,scc)
+        if matrix[vid][j] == 1 and j not in reached and j in scc:
+            dfsSCC(reached, record, matrix, j, scc)
 
 
 def findRange(graph):
     for scc in graph.SCC:
-        sccs=departScc(scc,graph)
+        sccs = departScc(scc, graph)
         for i in sccs:
-            widenSCC(i,graph)
-        futureRes(scc,graph)
+            widenSCC(i, graph)
+        futureRes(scc, graph)
         for i in sccs:
-            narrowSCC(i,graph)
-    print(graph.vertex[graph.vars[-1]],graph.ranges[graph.vars[-1]])
+            narrowSCC(i, graph)
+    print(graph.vertex[graph.vars[-1]], graph.ranges[graph.vars[-1]])
 
 
 def main():
@@ -626,9 +637,8 @@ def main():
         print(cons)
     graph = Graph(essa, constraints)
     print(graph)
-    print(graph.vars,graph.cons)
+    print(graph.vars, graph.cons)
     findRange(graph)
-
 
 
 if __name__ == '__main__':
